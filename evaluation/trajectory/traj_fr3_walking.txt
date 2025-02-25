@@ -1,0 +1,61 @@
+
+ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+This program comes with ABSOLUTELY NO WARRANTY;
+This is free software, and you are welcome to redistribute it
+under certain conditions. See LICENSE.txt.
+
+Input sensor was set to: RGB-D
+Loading settings from ./Examples/RGB-D/TUM1.yaml
+	-Loaded camera 1
+	-Loaded image info
+	-Loaded RGB-D calibration
+	-Loaded ORB settings
+	-Loaded viewer settings
+	-Loaded Atlas settings
+	-Loaded misc parameters
+----------------------------------
+SLAM settings: 
+	-Camera 1 parameters (Pinhole): [ 517.306 516.469 318.643 255.314 ]
+	-Camera 1 distortion parameters: [  0.262383 -0.953104 -0.005358 0.002628 1.16331 ]
+	-Original image size: [ 640 , 480 ]
+	-Current image size: [ 640 , 480 ]
+	-Sequence FPS: 30
+	-RGB-D depth map factor: 5000
+	-Features per image: 1000
+	-ORB scale factor: 1.2
+	-ORB number of scales: 8
+	-Initial FAST threshold: 20
+	-Min FAST threshold: 7
+
+
+Loading ORB Vocabulary. This could take a while...
+Vocabulary loaded!
+
+Initialization of Atlas from scratch 
+Creation of new map with id: 0
+Creation of new map with last KF id: 0
+Loading Yolo model...
+************* Infer model on GPU! *************
+Start warming up
+read net ok!
+Seq. Name: 
+There are 1 cameras in the atlas
+Camera 0 is pinhole
+
+-------
+Start processing sequence ...
+Images in the sequence: 827
+
+Starting the Viewer
+First KF:0; Map init KF:0
+New Map created with 615 points
+Shutdown
+-------
+
+median tracking time: 0.171116
+mean tracking time: 0.168771
+
+Saving camera trajectory to /home/knowfix/Datasets/rgbd_dataset_freiburg3_walking_xyz//Results/CameraTrajectory.txt ...
+
+Saving keyframe trajectory to /home/knowfix/Datasets/rgbd_dataset_freiburg3_walking_xyz//Results/KeyFrameTrajectory.txt ...
