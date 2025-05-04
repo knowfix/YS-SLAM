@@ -31,13 +31,48 @@
 
 #include <librealsense2/rs.hpp>
 #include "librealsense2/rsutil.h"
+#define REGISTER_TIMES
+#define COMPILEDWITHC11
+#include <fstream>
+
 
 
 #include <System.h>
+// #include <chrono>
+// #include <ctime>
+// #include <iomanip>
+// #include <sstream>
+// #include <iostream>
 
 using namespace std;
 
 bool b_continue_session;
+
+// // Fungsi untuk menyimpan gambar RGB dan Depth dengan timestamp yang unik
+// void save_images(const cv::Mat &rgb_image, const cv::Mat &depth_image, double &timestamp, const std::string &output_dir, const std::string &output_dir2)
+// {
+//     // Menggunakan timestamp langsung dalam format floating-point
+//     std::ostringstream oss_timestamp;
+    
+//     // Gunakan precision tinggi untuk mencetak timestamp dengan 6 angka desimal
+//     oss_timestamp << std::fixed << std::setprecision(6) << timestamp;
+
+//     // Membuat nama file berdasarkan timestamp yang diformat
+//     std::ostringstream oss_rgb, oss_depth;
+//     oss_rgb << output_dir << "/rgb_" << oss_timestamp.str() << ".png";
+//     oss_depth << output_dir2 << "/depth_" << oss_timestamp.str() << ".png";
+
+//     // Menyimpan gambar RGB
+//     cv::imwrite(oss_rgb.str(), rgb_image);
+
+//     // Menyimpan gambar Depth
+//     cv::Mat depth_image_8u;
+//     depth_image.convertTo(depth_image_8u, CV_8U, 0.01);  // Mengkonversi depth menjadi format 8-bit untuk penyimpanan
+//     cv::imwrite(oss_depth.str(), depth_image_8u);
+    
+//     std::cout << "Saved images: " << oss_rgb.str() << ", " << oss_depth.str() << std::endl;
+// }
+
 
 void exit_loop_handler(int s){
     cout << "Finishing session" << endl;
@@ -157,6 +192,7 @@ int main(int argc, char **argv) {
 
 
             }
+            #define REGISTER_TIMES
 
             if (index == 3){
                 sensor.set_option(RS2_OPTION_ENABLE_MOTION_CORRECTION,0);
@@ -217,6 +253,11 @@ int main(int argc, char **argv) {
     //The "align_to" is the stream type to which we plan to align depth frames.
     rs2::align align(align_to);
     rs2::frameset fsSLAM;
+    // ==== FPS Counter ====
+    int frame_count = 0;
+    auto last_time = std::chrono::steady_clock::now();
+    double fps = 0;
+
 
     auto imu_callback = [&](const rs2::frame& frame)
     {
@@ -317,6 +358,13 @@ int main(int argc, char **argv) {
     double t_resize = 0.f;
     double t_track = 0.f;
     rs2::frameset fs;
+    std::ofstream log_file("/home/knowfix/Downloads/YDM-SLAM/log_tracking.txt");
+    if (!log_file.is_open()) {
+        std::cerr << "Failed to open log file for writing." << std::endl;
+        return -1;
+    }
+    log_file << "timestamp_ms\tFPS\tTrackingTime_ms\n";
+
 
     while (!SLAM.isShutDown()&& b_continue_session)
     {
@@ -344,7 +392,8 @@ int main(int argc, char **argv) {
             depth = depthCV.clone();
 
             image_ready = false;
-        }
+        }    
+
 
         // Perform alignment here
         auto processed = align.process(fs);
@@ -358,11 +407,30 @@ int main(int argc, char **argv) {
 
         im = cv::Mat(cv::Size(width_img, height_img), CV_8UC3, (void*)(color_frame.get_data()), cv::Mat::AUTO_STEP);
         depth = cv::Mat(cv::Size(width_img, height_img), CV_16U, (void*)(depth_frame.get_data()), cv::Mat::AUTO_STEP);
+        frame_count++;
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed = current_time - last_time;
+    
+        if (elapsed.count() >= 1.0) {
+            fps = frame_count / elapsed.count();
+            std::cout << std::fixed << std::setprecision(2) << "FPS: " << fps << std::endl;
+            frame_count = 0;
+            last_time = current_time;
+        }
+
+        // // Tentukan direktori tempat menyimpan gambar (misalnya, /home/user/output)
+        // double timestamp = fs.get_timestamp() * 1e-3;  // Dapatkan timestamp asli dari frame dalam detik
+        // std::string output_dir = "/home/knowfix/Datasets/output/rgb";
+        // std::string output_dir2 = "/home/knowfix/Datasets/output/depth";
+
+        // // Simpan gambar RGB dan Depth dengan timestamp
+        // save_images(im, depth, timestamp, output_dir, output_dir2);
+
 
         /*cv::Mat depthCV_8U;
         depthCV.convertTo(depthCV_8U,CV_8U,0.01);
         cv::imshow("depth image", depthCV_8U);*/
-
+        std::cout << std::fixed << std::setprecision(2) << "FPS: " << fps << std::endl;
         if(imageScale != 1.f)
         {
 #ifdef REGISTER_TIMES
@@ -385,6 +453,8 @@ int main(int argc, char **argv) {
     #endif
             t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
             SLAM.InsertResizeTime(t_resize);
+            std::cout << "[Resize Time] " << t_resize << " ms" << std::endl;
+
 #endif
         }
 
@@ -406,10 +476,14 @@ int main(int argc, char **argv) {
     #endif
         t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Track - t_Start_Track).count();
         SLAM.InsertTrackTime(t_track);
+        std::cout << "[Tracking Time] " << t_track << " ms" << std::endl;
+        log_file << timestamp * 1000.0 << "\t" << fps << "\t" << t_track << "\n";
+
 #endif
     }
     cout << "Saving keyframe trajectory..." << endl;
     SLAM.SaveKeyFrameTrajectoryTUM("/home/knowfix/KeyFrameTrajectory.txt");
+    log_file.close();
     cout << "System shutdown!\n";
 }
 
